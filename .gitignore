@@ -39,3 +39,7 @@ package.json
 /frontend/serviceAccountKey.json
 /frontend/.env.production
 
+# Scripts
+/scripts/
+/scripts/gcp_bootstrap.sh
+/scripts/gcp_env_template.sh
