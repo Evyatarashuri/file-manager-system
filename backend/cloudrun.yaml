@@ -1,0 +1,9 @@
+
+gcloud builds submit \
+  --tag gcr.io/PROJECT_ID/file-mgmt-backend .
+
+gcloud run deploy file-mgmt-backend \
+  --image gcr.io/PROJECT_ID/file-mgmt-backend \
+  --region europe-west1 \
+  --allow-unauthenticated \
+  --set-env-vars PROJECT_ID=... ,FIREBASE_PROJECT_ID=... ,STORAGE_BUCKET=...

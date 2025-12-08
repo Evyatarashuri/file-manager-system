@@ -1,0 +1,23 @@
+# Pub/Sub Consumer + GCP SDKs
+google-cloud-pubsub==2.20.0
+google-cloud-storage==2.14.0
+google-cloud-firestore==2.16.0
+
+# Base Python tooling
+pydantic==2.6.1
+pydantic-settings==2.2.1
+
+# Processing files
+PyPDF2==3.0.1
+python-multipart==0.0.9
+
+# Tokenizing / indexing / NLP
+tiktoken==0.6.0
+
+# Redis locks / idempotency
+redis==5.0.1
+
+# Utilities
+loguru==0.7.2
+python-dotenv==1.0.1
+firebase-admin==6.5.0

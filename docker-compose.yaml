@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # 1. Redis Service (Idempotency and Caching)
+  redis:
+    image: redis:7-alpine
+    container_name: local-redis
+    ports:
+      - "6379:6379"
+
+  # 2. Backend Service (FastAPI API)
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: api-backend
+    
+    # Loads all environment variables from ./backend/.env
+    env_file: ./backend/.env
+    
+    # Overrides/sets environment variables specific to Docker Compose
+    environment:
+      # Use the Docker service name for Redis host
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ENVIRONMENT=development 
+      
+      # Explicitly set the path to the Service Account Key *inside* the container
+      # This overrides any potential GOOGLE_APPLICATION_CREDENTIALS set in the .env file
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-accounts/backend-service-key.json
+
+    ports:
+      - "8000:8000"
+      
+    # Maps the local SA directory to the container's expected path
+    volumes:
+      - ./backend/service-accounts:/app/service-accounts:ro 
+      
+    depends_on:
+      - redis
+
+  # 3. Worker Service (Pub/Sub Subscriber/Consumer)
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: pubsub-worker
+    
+    # Loads all environment variables from ./worker/.env
+    env_file: ./worker/.env
+    
+    # Overrides/sets environment variables specific to Docker Compose
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ENVIRONMENT=development
+      # Use the worker's specific Service Account Key
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-accounts/worker-sa.json
+      
+    # Maps the local SA directory to the container's expected path
+    volumes:
+      - ./worker/service-accounts:/app/service-accounts:ro
+      
+    # Note: The worker needs to be able to talk to GCP services (Pub/Sub, Firestore) 
+    # using the mounted SA key.
+    depends_on:
+      - backend
+      - redis
+
+  # 4. Frontend Service (Nginx serving React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: web-frontend
+    
+    # Maps port 80 (Nginx default) to local port 3000
+    ports:
+      - "3000:80" 
+      
+    # Nginx in the frontend will proxy API requests to this service name (backend:8000)
+    depends_on:
+      - backend

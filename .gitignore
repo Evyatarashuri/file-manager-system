@@ -1,0 +1,38 @@
+
+# Backend
+backend/.env
+backend/backend-key.json
+backend/app/events/
+backend/services-accounts/
+backend/backend_key.json
+
+# Worker
+worker/.env
+worker/backend-key.json
+worker/worker-sa.json
+worker/account
+
+*.json
+
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+
+.DS_Store
+/secrets/
+
+package-lock.json
+node_modules/
+package.json
+
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/create_admin.cjs
+/frontend/.env.production.local
