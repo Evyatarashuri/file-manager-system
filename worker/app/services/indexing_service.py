@@ -45,22 +45,22 @@ class IndexingService:
     def index_file(self, file_id: str, user_id: str, raw_text: str):
         """
         Safe to call multiple times — Redis ensures only 1 worker executes.
-        Now includes FULL visibility logs.
         """
-        # Try acquiring Redis idempotency lock
+        # lock using as an Instance of IdempotencyKey class
         lock = IdempotencyKey(f"index:{file_id}", ttl=600)
 
+        # Try to acquire lock - returns True/False
         acquired = lock.acquire()
         logger.info(f"Redis Lock for {file_id} → acquired={acquired}")
 
         # Lock NOT acquired → meaning indexing already done or in progress
-        if not acquired:
+        if not acquired: # acquired is False
             logger.warning(f"SKIPPED — indexing already in progress for {file_id}")
             stored = lock.get_result()
             logger.info(f"Stored cached index exists? → {bool(stored)}")
             return stored or {"status": "processing"}
 
-        # If we reached here → indexing WILL run
+       # If we reached here → indexing WILL run - aciquire is True
         logger.info(f"Indexing STARTED for file={file_id}, user={user_id}")
 
         try:
@@ -71,7 +71,7 @@ class IndexingService:
             # Document to write
             index_doc = {
                 "indexed": True,
-                "user_id": user_id,
+                "user_id ": user_id,
                 "search_index": index,
             }
 
@@ -86,8 +86,8 @@ class IndexingService:
 
             logger.info(f"Indexing COMPLETED for {file_id}")
             return index_doc
-
+        
         except Exception as e:
-            lock.release()
+            lock.release() # Release lock on failure
             logger.error(f"Index FAILED for {file_id}: {e}", exc_info=True)
-            raise
+            raise # 

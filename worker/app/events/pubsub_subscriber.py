@@ -80,6 +80,7 @@ def _handle_signal(sig, frame) -> None:
     Signal handler for graceful shutdown in container / VM.
     """
     logger.warning(f"Shutdown signal received: {sig}")
+    # Set shutdown event to break main loop
     _shutdown_event.set()
 
 
@@ -98,6 +99,7 @@ def start_file_events_consumer(timeout: Optional[int] = None) -> None:
     subscription_path = f"projects/{PROJECT_ID}/subscriptions/{SUBSCRIPTION}"
     logger.info(f"Worker listening on: {subscription_path}")
 
+    # Create Pub/Sub Subscriber Client
     subscriber = pubsub_v1.SubscriberClient()
 
     flow_control = pubsub_v1.types.FlowControl(
@@ -105,6 +107,7 @@ def start_file_events_consumer(timeout: Optional[int] = None) -> None:
         max_bytes=10 * 1024 * 1024,  # 10MB in-flight
     )
 
+    # Entry-Point: Every message will be processed by the _callback function
     streaming_pull = subscriber.subscribe(
         subscription_path,
         callback=_callback,

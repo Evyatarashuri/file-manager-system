@@ -2,6 +2,7 @@ import json
 from app.config.redis import get_redis_client
 
 class IdempotencyKey:
+    """Redis-based Idempotency Key for safe, exactly-once processing."""
     def __init__(self, key: str, ttl: int = 300):
         self.key = f"idempotency:{key}"
         self.ttl = ttl
