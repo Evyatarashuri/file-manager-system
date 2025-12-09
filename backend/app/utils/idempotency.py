@@ -4,6 +4,9 @@ from fastapi.responses import JSONResponse, Response
 from app.repositories.redis_cache import RedisCache
 from app.schemas.Idempotency_response import IdempotencyResponse
 from typing import Optional, Any
+from app.middleware.logging import get_logger
+
+logger = get_logger("idempotency_middleware")
 
 redis_cache = RedisCache()
 
@@ -14,10 +17,17 @@ def idempotent(func):
     """
     @wraps(func)
     async def wrapper(*args, request: Request, **kwargs):
+        
         # 1. Get Key from Header
         idempotency_key = request.headers.get("Idempotency-Key")
+
         if not idempotency_key:
-            # Idempotency is mandatory for this route
+            logger.warning(
+                "Idempotency check failed: Missing Idempotency-Key header. "
+                f"path={request.url.path}, method={request.method}, "
+                f"client={request.client.host}"
+            )
+
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Idempotency-Key header is required."
@@ -26,15 +36,36 @@ def idempotent(func):
         # 2. Check Cache
         existing_result: Optional[IdempotencyResponse] = redis_cache.check_or_set_idempotency_key(
             key=idempotency_key, 
-            # Temporary value to indicate 'In Process'
             value=IdempotencyResponse(status_code=status.HTTP_202_ACCEPTED, body="Processing", headers={}) 
         )
 
         if existing_result:
+            logger.info("Idempotency key hit in Redis — returning cached or pending result.",
+                    extra={
+                        "idempotency_key": idempotency_key,
+                        "path": request.url.path,
+                        "status": existing_result.status_code,
+                        "state": "cached" if existing_result.status_code != 202 else "in_process",
+                        "method": request.method,
+                        "client_ip": request.client.host
+                    }
+                )
+
             # 3. Key exists: Return stored result (Idempotent success) or Conflict (In Process)
             if existing_result.status_code == status.HTTP_202_ACCEPTED:
-                 # Request is still processing (or failed to save final result)
-                 raise HTTPException(
+                 
+                logger.warning(
+                    "Idempotency key is still in processing state: Rejecting duplicate concurrent request.",
+                        extra={
+                            "idempotency_key": idempotency_key,
+                            "path": request.url.path,
+                            "method": request.method,
+                            "client_ip": request.client.host
+                        }
+                    )
+
+                # Request is still processing (or failed to save final result)
+                raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Request is already processing."
                 )
@@ -42,14 +73,16 @@ def idempotent(func):
             # Return the previous successful result (Idempotent success)
             raise HTTPException(
                 status_code=existing_result.status_code,
-                detail=existing_result.body, # In a real app, you would reconstruct the response object
+                detail=existing_result.body,
                 headers=existing_result.headers
             )
 
         try:
             # 4. First Request: Execute the function
             response = await func(*args, request=request, **kwargs)
-            
+
+            logger.info(f"Idempotency check passed for key: {idempotency_key}")
+
             # FIX: Handling the response object correctly.
             # If the route returns a Response object (like JSONResponse), we use its properties.
             # Otherwise, it's a dict/BaseModel, and we use it directly as the body.

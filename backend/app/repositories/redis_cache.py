@@ -14,7 +14,7 @@ class RedisCache:
     # MAIN FUNCTION — This is the one that failed before
     # -----------------------------
     def check_or_set_idempotency_key(self, key: str, value: IdempotencyResponse) -> Optional[IdempotencyResponse]:
-        serialized = json.dumps(value.model_dump())
+        serialized = json.dumps(value.model_dump()) # Serialize to JSON string to store in Redis (Mandatory)
 
         # SETNX = set only if not exists (atomic)
         was_set = self.client.set(key, serialized, ex=IDEMPOTENCY_TTL_SECONDS, nx=True)

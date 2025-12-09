@@ -1,28 +1,39 @@
 # File Management System – Backend-Heavy Fullstack App (GCP / FastAPI / React)
-
-Strong focus on: **cloud-native architecture**, **event-driven processing**, **idempotent workflows**, **Decoupled Services**, **scalability**, **reliability**, and **observability**.
-
-
-The app allows authenticated users to upload, view, search, download, and delete files. Admin users can audit all files across all users with strict authorization rules.
+---
 
 
+# System Architecture Diagrams
 
-Google Cloud Platform: 
+Below is the visual overview of the system’s high-level architecture, file-processing pipeline, and authentication flow.
 
-Hosting:
-- Cloud Run for serverless container hosting for the FastAPI backend.
+---
 
-- 
+## Asynchronous File Processing & Search Indexing Pipeline
 
-### Project Flow
+This diagram illustrates the end-to-end flow of file uploads, metadata storage, Pub/Sub event publishing, worker processing, Redis coordination, and Firestore indexing.
 
-# Sign-In Request Flows
-Authentication (Google Sign-In) handled via **Firebase** Authentication.
-- Frontend uses Firebase Auth to perform Google login.
-- Firebase issues an ID token (JWT).
-- Backend middleware verify_firebase_token.
-- Verifies signature with Firebase public keys.
+![Asynchronous File Processing Pipeline](docs/file-processing.svg)
+
+---
+
+## Firebase Authentication Flow (Frontend → Backend → Firebase)
+
+This diagram shows how the frontend signs in via Firebase, sends an ID Token to the backend, and how the backend verifies the token using Firebase Admin SDK.
+
+![Firebase Authentication Flow](docs/firebase-auth-flow.svg)
+
+---
+
+## Additional Documentation
+
+You can find extended explanations inside:
+
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- [`docs/google-services-integration.md`](docs/google-services-integration.md)
 
 
-# File Upload Flow - Pub/Sub - Asynchronous Processing
-1. User selects a file to upload via the React frontend (PDF / TXT / JSON).
+---
+
+
+## Local Setup Instructions (Work in Progress)
+This README is still under construction — a complete local setup guide will be added soon.

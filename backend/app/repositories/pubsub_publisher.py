@@ -23,7 +23,7 @@ class PubSubPublisher:
             self.topic_path,
             json.dumps(message).encode("utf-8")
         )
-
+ 
     # not in use for now - but could be useful later
     def publish_file_deleted(self, file_id: str, user_id: str):
         message = {
